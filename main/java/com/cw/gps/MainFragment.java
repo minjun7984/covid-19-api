@@ -81,12 +81,12 @@ public class MainFragment extends Fragment {
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
                 DocumentBuilder db = dbf.newDocumentBuilder();
                 StringBuilder urlBuilder = new
-                        StringBuilder("http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson?serviceKey=AXeLGdsDBA%2FWzCVWg0HRsxVHmQmjrsV8IPtApa3FtNTjhu0BlTgAcm31LL5tjPyAX0fwrReI0HAyk%2B%2F2TJyO%2Bg%3D%3D&pageNo=1&numOfRows=10&startCreateDt="+data+"&endCreateDt="+data); /*URL*/
+                        StringBuilder(""); /*URL*/
                 Log.i("성공","1번");
 
                 data=Integer.toString(Integer.parseInt(data)-1);
                 StringBuilder urlBuilder2 = new
-                        StringBuilder("http://openapi.data.go.kr/openapi/service/rest/Covid19/getCovid19InfStateJson?serviceKey=AXeLGdsDBA%2FWzCVWg0HRsxVHmQmjrsV8IPtApa3FtNTjhu0BlTgAcm31LL5tjPyAX0fwrReI0HAyk%2B%2F2TJyO%2Bg%3D%3D&pageNo=1&numOfRows=10&startCreateDt="+data+"&endCreateDt="+data); /*URL*/
+                        StringBuilder(""); /*URL*/
                 Log.i("성공","1번");
 
 
