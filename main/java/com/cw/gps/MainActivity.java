@@ -1,181 +1,98 @@
 package com.cw.gps;
 
-import androidx.appcompat.app.AppCompatActivity;
-import android.Manifest;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
-import android.location.LocationManager;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AppCompatActivity;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.activity_main.*
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
+class MainActivity : AppCompatActivity() {
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        
 
-import android.os.Bundle;
+        setSupportActionBar(toolbar) //커스텀한 toolbar를 액션바로 사용
+        supportActionBar?.setDisplayShowTitleEnabled(false) //액션바에 표시되는 제목의 표시유무를 설정합니다. false로 해야 custom한 툴바의 이름이 화면에 보이게 됩니다.
+        //toolbar.title = "Co Ring"
 
-public class MainActivity extends AppCompatActivity {
+        // 하단 탭이 눌렸을 때 화면을 전환하기 위해선 이벤트 처리하기 위해 BottomNavigationView 객체 생성
+        var bnv_main = findViewById(R.id.bnv_main) as BottomNavigationView
 
-    private GpsTracker gpsTracker;
-
-    private static final int GPS_ENABLE_REQUEST_CODE = 2001;
-    private static final int PERMISSIONS_REQUEST_CODE = 100;
-    String[] REQUIRED_PERMISSIONS = {Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION};
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        if(!checkLocationServicesStatus()){
-            showDialogForLocationServiceSetting();
-        }else {
-            checkRunTimePermission();
-        }
-        final TextView textview_address = (TextView)findViewById(R.id.textview);
-
-        Button ShowLocationButton = (Button) findViewById(R.id.button);
-        ShowLocationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick (View arg0){
-                gpsTracker = new GpsTracker(MainActivity.this);
-                double latitude = gpsTracker.getLatitude();
-                double longitude = gpsTracker.getLongitude();
-
-                String address = getCurrentAddress(latitude, longitude);
-                textview_address.setText(address);
-
-                Toast.makeText(MainActivity.this, "현재위치\n위도" + latitude + "\n경도" + longitude, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    @Override
-public void onRequestPermissionsResult(int permsRequestCode, @NonNull String[] permissions, @NonNull int[] grandResults) {
-        super.onRequestPermissionsResult(permsRequestCode, permissions, grandResults);
-        if (permsRequestCode == PERMISSIONS_REQUEST_CODE && grandResults.length == REQUIRED_PERMISSIONS.length) {
-
-            boolean check_result = true;
-
-            for (int result : grandResults) {
-                if (result != PackageManager.PERMISSION_GRANTED) {
-                    check_result = false;
-                    break;
+        // OnNavigationItemSelectedListener를 통해 탭 아이템 선택 시 이벤트를 처리
+        // navi_menu.xml 에서 설정했던 각 아이템들의 id를 통해 알맞은 프래그먼트로 변경하게 한다.
+        bnv_main.run {
+            var LastTab : Int = 0       //api 트래픽 초과 방지
+            setOnNavigationItemSelectedListener {
+            when(it.itemId) {
+                R.id.first -> {
+                    // 다른 프래그먼트 화면으로 이동하는 기능
+                    val QRFragment = Tab_left_qr()
+                    if(LastTab != R.id.first) {
+                        supportFragmentManager.beginTransaction().replace(R.id.fl_container, QRFragment).commit()
+                        LastTab = R.id.first
+                    }
+                }
+                R.id.second -> {
+                    val HomeFragment = Tab_ViewPager2()
+                    if (LastTab != R.id.second) {
+                        supportFragmentManager.beginTransaction().replace(R.id.fl_container, HomeFragment).commit()
+                        LastTab = R.id.second
+                    }
+                }
+                R.id.third -> {
+                    val SettingFragment = Tab_right_settings()
+                    if(LastTab != R.id.third ) {
+                        supportFragmentManager.beginTransaction().replace(R.id.fl_container, SettingFragment).commit()
+                        LastTab = R.id.third
+                    }
                 }
             }
-
-            if (check_result) {
-                ;
-            } else {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, REQUIRED_PERMISSIONS[0]) || ActivityCompat.shouldShowRequestPermissionRationale(this, REQUIRED_PERMISSIONS[1])) {
-                    Toast.makeText(MainActivity.this, "퍼미션이 거부되었습니다. 앱을 다시 실행해 퍼미션을 허용해주세요.", Toast.LENGTH_LONG).show();
-                    finish();
-                } else {
-                    Toast.makeText(MainActivity.this, "퍼미션이 거부되었습니다. 설정에서 퍼미션을 허용하십쇼", Toast.LENGTH_LONG).show();
-                }
-            }
+            true
+        }
+            selectedItemId = R.id.second
+            LastTab = selectedItemId
         }
     }
 
-void checkRunTimePermission(){
-    int hasFineLocationPermission = ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.ACCESS_FINE_LOCATION);
-    int hasCoarseLocationPermmision = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION);
+    private fun createNotificationChannel(context: Context, importance: Int, showBadge: Boolean,
+                                          name: String, description: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "${context.packageName}-$name"
+            val channel = NotificationChannel(channelId, name, importance)
+            channel.description = description
+            channel.setShowBadge(showBadge)
 
-    if(hasFineLocationPermission == PackageManager.PERMISSION_GRANTED && hasCoarseLocationPermmision == PackageManager.PERMISSION_GRANTED){
-
-    } else {
-        if(ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,REQUIRED_PERMISSIONS[0])){
-        Toast.makeText(MainActivity.this,"이 앱을 실행하려면 접근 권한이 필요합니다", Toast.LENGTH_LONG).show();
-
-        ActivityCompat.requestPermissions(MainActivity.this,REQUIRED_PERMISSIONS,PERMISSIONS_REQUEST_CODE);
-        } else {
-            ActivityCompat.requestPermissions(MainActivity.this, REQUIRED_PERMISSIONS,PERMISSIONS_REQUEST_CODE);
-        }
-    }
-    }
-
-    public String getCurrentAddress(double latitude, double longitude) {
-
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        List<Address> addresses;
-
-        try {
-            addresses = geocoder.getFromLocation(
-                    latitude,
-                    longitude,
-                    7);
-        } catch (IOException ioException) {
-            Toast.makeText(this, "지오코더 사용불가", Toast.LENGTH_LONG).show();
-            return "지오코더 서비스 사용 불가";
-        } catch (IllegalArgumentException illegalArgumentException) {
-            Toast.makeText(this, "잘못된 GPS 좌표", Toast.LENGTH_LONG).show();
-            return "잘못된 GPS 좌표";
-        }
-
-        if (addresses == null || addresses.size() == 0) {
-            Toast.makeText(this, "주소 미발견", Toast.LENGTH_LONG).show();
-            return "주소 미발견";
-        }
-
-        Address address = addresses.get(0);
-        return address.getAddressLine(0).toString() + "\n";
-    }
-
-    private void showDialogForLocationServiceSetting() {
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("위치 서비스 비활성화");
-        builder.setMessage("앱을 사용하기 위해서는 위치서비스가 필요합니다.\n" + "위치 설정을 수정하시겠습니까?");
-        builder.setCancelable(true);
-        builder.setPositiveButton("설정", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int id) {
-                Intent callGPSSettingIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivityForResult(callGPSSettingIntent, GPS_ENABLE_REQUEST_CODE);
-            }
-        });
-        builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-            }
-        });
-        builder.create().show();
-    }
-
-    @Override
-    protected  void onActivityResult(int requestCode, int resultCode, Intent data){
-        super.onActivityResult(requestCode, resultCode, data);
-
-        switch(requestCode){
-            case GPS_ENABLE_REQUEST_CODE:
-
-            if(checkLocationServicesStatus()){
-                if(checkLocationServicesStatus()){
-                    Log.d("@@@", "onActivityResult : GPS 활성화 되었음");
-                    checkRunTimePermission();
-                    return;
-                }
-            }
-            break;
+            val notificationManager = context.getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
         }
     }
 
-    public boolean checkLocationServicesStatus(){
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+    private var backPressedTime : Long = 0
+    override fun onBackPressed() {
+        Log.d("TAG", "뒤로가기")
+
+        // 2초내 다시 클릭하면 앱 종료
+        if (System.currentTimeMillis() - backPressedTime < 2000) {
+            finish()
+            return
+        }
+        // 처음 클릭 메시지
+        Toast.makeText(this, "'뒤로' 버튼을 한번 더 누르시면 앱이 종료됩니다.", Toast.LENGTH_SHORT).show()
+        backPressedTime = System.currentTimeMillis()
     }
 }
